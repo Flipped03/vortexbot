@@ -45,7 +45,7 @@ int main(int argc, char ** argv)
 
     try
     {
-        ser.setPort("/dev/ttyUSB0");
+        ser.setPort("/dev/ttyUSB1");
         ser.setBaudrate(115200);
         ser.setBytesize(serial::eightbits);
         ser.setStopbits(serial::stopbits_one);
