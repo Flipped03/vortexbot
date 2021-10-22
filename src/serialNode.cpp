@@ -1,16 +1,23 @@
 #include "ros/ros.h"
 #include "std_msgs/String.h"
+#include <nav_msgs/Odometry.h>
+#include <sensor_msgs/NavSatFix.h>
+#include <gps_common/conversions.h>
 #include <serial/serial.h>
 #include <sstream>
 
-serial::Serial ser;
 using namespace std;
-//test revise
+
+ros::Publisher chatter_pub;
+ros::Publisher odom_pub;
+serial::Serial ser;
+
 union floatData
 {
 	float d;
 	uint8_t data[4];
 }qq0,qq1,qq2,qq3,yaw_angle;
+
 uint8_t getChecksum(const std::vector<uint8_t>& pack, int length) {
   int i;
   uint8_t sum = 0;
@@ -19,6 +26,7 @@ uint8_t getChecksum(const std::vector<uint8_t>& pack, int length) {
   }
   return sum;
 }
+
 void parseSerial(const std::vector<uint8_t>& buf , const ros::Time& curr_time)
 {
     if(buf[0]==0x55 &buf[1]==0xaa)
@@ -26,19 +34,43 @@ void parseSerial(const std::vector<uint8_t>& buf , const ros::Time& curr_time)
 	   int length=static_cast<int>(buf[2]);
 	   if(getChecksum(buf,3+length)==buf[3+length])
 	   {
-  	     for(int i=0;i<4;i++)
-		{
-			yaw_angle.data[i]=buf[i+19];
-		}
+            for(int i=0;i<4;i++)
+            {
+                yaw_angle.data[i]=buf[i+19];
+            }
 	   }
 	}
 }
+
+void gpsCallback(const sensor_msgs::NavSatFixConstPtr& fix)
+{
+    double northing, easting;
+    std::string zone;
+    gps_common::LLtoUTM(fix->latitude, fix->longitude, northing, easting, zone);
+
+    if(odom_pub)
+    {
+        nav_msgs::Odometry odom;
+
+        odom.header.stamp = fix->header.stamp;
+
+        odom.pose.pose.position.x = easting;
+        odom.pose.pose.position.y = northing;
+        odom.pose.pose.position.z = fix->altitude;
+
+        odom_pub.publish(odom);
+    }
+}
+
 int main(int argc, char ** argv)
 {
     ros::init(argc,argv,"vortex_serial");    //vortex_serial代表node的名字
     ros::NodeHandle n;
 
-    ros::Publisher chatter_pub = n.advertise<std_msgs::String>("chatter",1000);   //1000代表缓冲最近的1000条消息，queue
+    chatter_pub = n.advertise<std_msgs::String>("chatter",1000);   //1000代表缓冲最近的1000条消息，queue
+    odom_pub = n.advertise<nav_msgs::Odometry>("/wheel_odom",100);
+
+    ros::Subscriber gps_sub = n.subscribe("/fix", 1000, gpsCallback);
 
     ros::Rate loop_rate(10);
     int count = 0;
