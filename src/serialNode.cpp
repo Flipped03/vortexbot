@@ -106,7 +106,7 @@ int main(int argc, char ** argv)
             ros::Time curr_time = ros::Time::now();
             std::vector<uint8_t> res;
             ser.read(res,ser.available());
-		cout << "222"<< endl;
+	cout << "222"<< endl;
             if(!res.empty())
                 parseSerial(res,curr_time);
 		cout << yaw_angle.d << endl;
