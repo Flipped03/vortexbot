@@ -190,7 +190,11 @@ void MPCControl::computeErrors(traj & traj_ref)
     vector_error_(3,0)=current_state_.vel-traj_ref.vel;
     vector_error_(4,0)=current_state_.delta-traj_ref.delta;
 }
-
+//设置机器人当前位置信息
+void MPCControl::updateState(traj & current_pos)
+{
+    current_state_=current_pos;
+}
 bool MPCControl::qpSlover()
 {
     USING_NAMESPACE_QPOASES
@@ -355,5 +359,38 @@ void MPCControl::setRefTraj(vector<traj> & ref_traj)
     {
         ref_traj_[i]=ref_traj[i];
     }
+
+}
+
+double MPCControl::calculateDistance(traj pos1,traj pos2)
+{
+    return  sqrt((pos1.x-pos2.x)*(pos1.x-pos2.x)+(pos1.y-pos2.y)*(pos1.y-pos2.y));
+}
+
+
+void MPCControl::updateNearestRefState(traj& traj_ref_pos,int & traj_ref_index)
+{
+    double dis_min=calculateDistance(current_state_,ref_traj_[0]);
+    //遍历找最小
+    for(int i=0;i<ref_traj_.size();i++)
+    {
+        double dis_cached=this->calculateDistance(current_state_,ref_traj_[i]);
+        if(dis_cached<=dis_min)
+        {
+            dis_min=dis_cached;
+            traj_ref_index=i;
+            traj_ref_pos=ref_traj_[i];
+        }
+    }
+}
+
+
+
+bool  MPCControl::isGoalReached()
+{
+    if(calculateDistance(current_state_,ref_traj_.back())<goal_threshold_)
+        return true;
+    else
+        return false;
 
 }

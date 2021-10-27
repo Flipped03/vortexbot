@@ -5,6 +5,7 @@
 #include <gps_common/conversions.h>
 #include <serial/serial.h>
 #include <sstream>
+#include <qpOASES.hpp>
 
 using namespace std;
 

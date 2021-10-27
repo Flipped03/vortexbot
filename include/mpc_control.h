@@ -5,6 +5,7 @@
 #include<algorithm>
 #include<string>
 #include"Eigen/Core"
+#include"traj_generate.h"
 #include<cmath>
 #include <qpOASES.hpp>
 
@@ -38,6 +39,14 @@ class MPCControl
         bool getFirstControl(double& vel,double& delta);
         bool getRealControl(vector<double>& real_vel,vector<double>& real_delta);
 
+        bool isGoalReached();
+
+    protected:
+        //@brief 计算两个点之间的距离
+        double calculateDistance(traj pos1,traj pos2); 
+
+        //@ brief 更新轨迹上离机器人实际位置最近的点
+        void updateNearestRefState(traj& traj_ref_pos,int & traj_ref_index);  
 
     private:
         //存放参考轨迹
