@@ -115,7 +115,7 @@ int main(int argc, char ** argv)
 
     //初始化模拟定位器
     SimLocate sim_locater(car_length,init_pos);
-
+    mpc_controller.setRefTraj(traj_ref);
     while(ros::ok())
     {
         std_msgs::String msg;
@@ -133,7 +133,7 @@ int main(int argc, char ** argv)
                 parseSerial(res,curr_time);
 		cout << yaw_angle.d << endl;
         }
-
+	cout << "123"<< endl;
         //用于存放最优控制量
         double control_vel;
         double control_delta;
