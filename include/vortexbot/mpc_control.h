@@ -31,7 +31,7 @@ class MPCControl
         void computeErrors(traj & traj_ref);
 
         //更新机器人对应参考位置的状态矩阵
-        void updateMatrix(double vx_ref,double phi_ref,double delta_ref);
+        void updateMatrix();
 
         //利用qpOASES求解二次规划问题
         bool qpSlover();
@@ -71,6 +71,10 @@ class MPCControl
         //状态变量个数和控制变量个数
         int basic_state_size_;
         int basic_control_size_;
+
+        //状态矩阵用到的参考量
+        traj nearest_ref_traj_pos_;
+        int nearest_ref_traj_index_;
 
         //松弛因子
         int relax_factor_;

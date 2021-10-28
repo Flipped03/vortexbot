@@ -1,4 +1,4 @@
-#include "traj_generate.h"
+#include "vortexbot/traj_generate.h"
 
 TrajGenerate::TrajGenerate()
 {

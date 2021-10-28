@@ -1,5 +1,5 @@
 #include<iostream>
-#include"mpc_control.h"
+#include"vortexbot/mpc_control.h"
 #include "Eigen/LU"
 
 using namespace std;
@@ -57,8 +57,15 @@ MPCControl:: ~ MPCControl()
     ;
 }
 
-void MPCControl::updateMatrix(double vx_ref,double phi_ref,double delta_ref)
-{
+void MPCControl::updateMatrix()
+{    
+    //找到离实际位置最近的参考点
+    double vx_ref=0.0,phi_ref=0.0,delta_ref=0.0;
+    updateNearestRefState(nearest_ref_traj_pos_,nearest_ref_traj_index_);
+    vx_ref=nearest_ref_traj_pos_.vel;
+    phi_ref=nearest_ref_traj_pos_.phi;
+    delta_ref=nearest_ref_traj_pos_.delta;
+    
     //更新线性化的vehicle状态空间方程，与离散方程
     matrix_a_=Eigen::MatrixXd::Zero(basic_state_size_,basic_state_size_);
     matrix_a_(0,2)=-vx_ref*sin(phi_ref);
@@ -386,11 +393,11 @@ void MPCControl::updateNearestRefState(traj& traj_ref_pos,int & traj_ref_index)
 
 
 
-bool  MPCControl::isGoalReached()
-{
-    if(calculateDistance(current_state_,ref_traj_.back())<goal_threshold_)
-        return true;
-    else
-        return false;
+// bool  MPCControl::isGoalReached()
+// {
+//     if(calculateDistance(current_state_,ref_traj_.back())<goal_threshold_)
+//         return true;
+//     else
+//         return false;
 
-}
+// }

@@ -1,0 +1,24 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "",
+        "limitSymbolsToIncludedHeaders": true
+      },
+      "includePath": [
+        "/opt/ros/melodic/include/**",
+        "/home/li/catkin_ws/src/learn_rviz_tf/include/**",
+        "/home/li/catkin_ws/src/mbot/mbot_gazebo/include/**",
+        "/home/li/catkin_ws/src/mbot/mbot_navigation/include/**",
+        "/home/li/catkin_ws/src/mbot/mbot_teleop/include/**",
+        "/home/li/catkin_ws/src/myserial/include/**",
+        "/home/li/catkin_ws/src/pub_sub_test/include/**",
+        "/home/li/catkin_ws/src/ros_stm32/include/**",
+        "/home/li/vortex_ws/src/vortexbot/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ROS"
+    }
+  ],
+  "version": 4
+}

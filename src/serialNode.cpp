@@ -5,7 +5,13 @@
 #include <gps_common/conversions.h>
 #include <serial/serial.h>
 #include <sstream>
+
 #include <qpOASES.hpp>
+#include "Eigen/LU"
+
+#include"vortexbot/mpc_control.h"
+#include"vortexbot/traj_generate.h"
+#include"vortexbot/sim_locate.h"
 
 using namespace std;
 
@@ -43,9 +49,10 @@ void parseSerial(const std::vector<uint8_t>& buf , const ros::Time& curr_time)
 	}
 }
 
+double northing, easting;
 void gpsCallback(const sensor_msgs::NavSatFixConstPtr& fix)
 {
-    double northing, easting;
+    
     std::string zone;
     gps_common::LLtoUTM(fix->latitude, fix->longitude, northing, easting, zone);
 
@@ -76,6 +83,7 @@ int main(int argc, char ** argv)
     ros::Rate loop_rate(10);
     int count = 0;
 
+    //打开串口USB1
     try
     {
         ser.setPort("/dev/ttyUSB1");
@@ -91,28 +99,57 @@ int main(int argc, char ** argv)
         ROS_ERROR("Unable to open port");
         return -1;
     }
-    
+
+    //生成轨迹
+    traj init_pos{0,0.0,7.0,0.0,0.0};
+    TrajGenerate traj_generator(500,0.05);
+    vector<traj> traj_ref;
+    vector<double> time_ref;
+    traj_generator.getTraj(traj_ref,time_ref);
+
+    //初始化MPC控制器
+    int Np=10,Nc=10;
+    double car_length=2.6;
+    double sample_time=0.05;
+     MPCControl mpc_controller(sample_time,car_length,Np,Nc);
+
+    //初始化模拟定位器
+    SimLocate sim_locater(car_length,init_pos);
+
     while(ros::ok())
     {
         std_msgs::String msg;
-
         std::stringstream ss;
         ss<<"hello world"<<count;
-
         msg.data = ss.str();
-
         ROS_INFO("%s",msg.data.c_str());
-	cout << "111"<< endl;
+
         if(ser.available()){
             ros::Time curr_time = ros::Time::now();
             std::vector<uint8_t> res;
             ser.read(res,ser.available());
-	cout << "222"<< endl;
+	        cout << "222"<< endl;
             if(!res.empty())
                 parseSerial(res,curr_time);
 		cout << yaw_angle.d << endl;
         }
 
+        //用于存放最优控制量
+        double control_vel;
+        double control_delta;
+        //用于存放当前的位置
+        traj current_pos{northing, easting,0,1.0,0};
+        //告诉mpc当前机器人位置
+        mpc_controller.updateState(current_pos);
+        //更新MPC矩阵
+        mpc_controller.updateMatrix();
+        //求解ＭＰＣ
+        mpc_controller.qpSlover();
+        //获取ＭＰＣ的控制量
+        mpc_controller.getFirstControl(control_vel,control_delta);
+        // //根据控制量 模拟机器人运动
+        sim_locater.updateRungeKuttaPosition(control_vel,control_delta,sample_time);
+        
         chatter_pub.publish(msg);
 
         ros::spinOnce();

@@ -36,13 +36,13 @@ int main()
     errors_ref_traj.resize(Np);
 
 
-        mpc_controller.updateErrorsRefTraj(errors_ref_traj);
+        //mpc_controller.updateErrorsRefTraj(errors_ref_traj);
         
-        mpc_controller.updateMatrix(traj_ref[i].vel,traj_ref[i].phi,traj_ref[i].delta);
+        //mpc_controller.updateMatrix(traj_ref[i].vel,traj_ref[i].phi,traj_ref[i].delta);
         mpc_controller.qpSlover();
 
         mpc_controller.getFirstControl(control_vel,control_delta);
-    }
+    
         
 
     vector<traj> traj_real;

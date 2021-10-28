@@ -117,7 +117,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -125,10 +125,16 @@ include_directories(
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/vortexbot.cpp
 # )
-add_executable(serialNode src/serialNode.cpp)
+add_executable(serialNode src/serialNode.cpp src/mpc_control.cpp src/traj_generate.cpp src/sim_locate.cpp)
 target_link_libraries(serialNode ${catkin_LIBRARIES})
+target_link_libraries(serialNode
+${catkin_LIBRARIES}
+libqpOASES.a
+)
 add_executable(sub_test src/sub_test.cpp)
 target_link_libraries(sub_test ${catkin_LIBRARIES})
+#add_executable(serialNode src/mpc_control.cpp src/traj_generate.cpp)
+#target_link_libraries(sub_test ${catkin_LIBRARIES})
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
