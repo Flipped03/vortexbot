@@ -26,8 +26,8 @@ MPCControl::MPCControl(double sample_time,double car_length,int Np,int Nc)
     basic_control_size_=2; 
 
     //松弛因子
-    relax_factor_=2.0;
-    relax_factor_max_=4.0;
+    relax_factor_=5.0;
+    relax_factor_max_=10.0;
     //汽车参数
     car_length_=car_length;
 
@@ -35,11 +35,11 @@ MPCControl::MPCControl(double sample_time,double car_length,int Np,int Nc)
     //转角单个方向的范围
     wheel_single_direction_max_degree_ = 130.0/180.0*M_PI;
     //最大转角转速
-    wheel_single_direction_max_vel_ = 130.0/180.0*M_PI;
+    wheel_single_direction_max_vel_ = 140.0/180.0*M_PI;
     //最大速度
-    vx_max_ = 300;
+    vx_max_ = 10.0;
     //最大纵向加速度
-    ax_max_ = 200;
+    ax_max_ = 5.0;
     //当前位置误差
     vector_error_=Eigen::MatrixXd::Zero(basic_state_size_+basic_control_size_,1);
 
@@ -122,10 +122,11 @@ void MPCControl::updateMatrix()
     }
 
     //更新权重矩阵
-    matrix_q_=100*Eigen::MatrixXd::Identity(basic_state_size_*Np_,basic_state_size_*Np_);
-    matrix_r_=5*Eigen::MatrixXd::Identity(basic_control_size_*Nc_,basic_control_size_*Nc_);
+    matrix_q_=10*Eigen::MatrixXd::Identity(basic_state_size_*Np_,basic_state_size_*Np_);
+    matrix_r_=10*Eigen::MatrixXd::Identity(basic_control_size_*Nc_,basic_control_size_*Nc_);
     //cout<<matrix_q_<<endl<<matrix_r_;
 
+    computeErrors(nearest_ref_traj_pos_);
 
     //更新二次规划矩阵
     matrix_H_=Eigen::MatrixXd::Zero(basic_control_size_*Nc_+1,basic_control_size_*Nc_+1);
@@ -146,19 +147,22 @@ void MPCControl::updateMatrix()
         matrix_du_ub_(basic_control_size_*i,0)=ax_max_*sample_time_;
         matrix_du_ub_(basic_control_size_*i+1,0)=wheel_single_direction_max_vel_*sample_time_;
     }
-
-    matrix_du_ub_(basic_control_size_*Nc_,0)=relax_factor_max_;
     matrix_du_lb_=-1.0*matrix_du_ub_;
+    matrix_du_ub_(basic_control_size_*Nc_,0)=relax_factor_max_;
 
     //更新控制量的上下界
     matrix_u_ub_.resize(basic_control_size_*Nc_,1);
     matrix_u_lb_.resize(basic_control_size_*Nc_,1);
     for(int i=0;i<Nc_;i++)
     {
-        matrix_u_ub_(basic_control_size_*i,0)=vx_max_*sample_time_;
-        matrix_u_ub_(basic_control_size_*i+1,0)=wheel_single_direction_max_degree_*sample_time_;
+        matrix_u_ub_(basic_control_size_*i,0)=vx_max_-vx_ref;
+        matrix_u_ub_(basic_control_size_*i+1,0)=wheel_single_direction_max_degree_-delta_ref;
     }
-    matrix_u_lb_=-1.0*matrix_u_ub_;
+     for(int i=0;i<Nc_;i++)
+    {
+        matrix_u_lb_(basic_control_size_*i,0)= -vx_max_-vx_ref;
+        matrix_u_lb_(basic_control_size_*i+1,0)=-wheel_single_direction_max_degree_-delta_ref;
+    }
     
     //更新增量的线性不等式约束
     matrix_constraint_A_=Eigen::MatrixXd::Zero(basic_control_size_*Nc_,basic_control_size_*Nc_+1);
@@ -171,6 +175,21 @@ void MPCControl::updateMatrix()
     }
 
     //更新上个时刻的控制量，以便约束矩阵A的上下界的构造
+    // Eigen::MatrixXd matrix_previous_control_offset;
+    // matrix_previous_control_offset.resize(basic_control_size_*Nc_,1);
+    // for(int i=0;i<Nc_;i++)
+    // {
+    //     matrix_previous_control_offset(basic_control_size_*i,0)=real_control_vel_offset_.back();
+    //     matrix_previous_control_offset(basic_control_size_*i+1,0)=real_control_delta_offset_.back();
+    // }
+
+    // //更新约束矩阵A对应的上下界
+    // matrix_constraint_ubA_.resize(basic_control_size_*Nc_,1);
+    // matrix_constraint_lbA_.resize(basic_control_size_*Nc_,1);
+
+    // matrix_constraint_ubA_=matrix_u_ub_-matrix_previous_control_offset;
+    // matrix_constraint_lbA_=matrix_u_lb_-matrix_previous_control_offset;
+
     Eigen::MatrixXd matrix_previous_control;
     matrix_previous_control.resize(basic_control_size_*Nc_,1);
     for(int i=0;i<Nc_;i++)
@@ -287,6 +306,7 @@ bool MPCControl::qpSlover()
     //qp求解过程
     QProblem qp_problem(basic_control_size_*Nc_+1,basic_control_size_*Nc_);
     Options my_options;
+    my_options.printLevel=PL_NONE;
     qp_problem.setOptions(my_options);
     int nWSR=mpc_max_iteration_;//备注，一定要单独给定，不能直接把mpc_max_iteration_给init函数，否则qp不可解
     auto return_result=qp_problem.init(h_matrix,g_matrix,affine_constraint_matrix,lower_bound,upper_bound,constraint_lower_bound,constraint_upper_bound,nWSR);
@@ -314,9 +334,12 @@ bool MPCControl::qpSlover()
     optim_relax_factor_=result[basic_control_size_*Nc_];
 
     //保存实际控制量，得到的最优控制增量+上一时刻的实际控制量
+    // real_control_vel_offset_.push_back(optim_control_[0]+real_control_vel_offset_.back());
+    // real_control_delta_offset_.push_back(optim_control_[1]+real_control_delta_offset_.back());
+    // real_control_vel_.push_back(real_control_vel_offset_.back()+ref_traj_[nearest_ref_traj_index_].vel);
+    // real_control_delta_.push_back(real_control_delta_offset_.back()+ref_traj_[nearest_ref_traj_index_].delta);
     real_control_vel_.push_back(optim_control_[0]+real_control_vel_.back());
     real_control_delta_.push_back(optim_control_[1]+real_control_delta_.back());
-    
     return qp_problem.isSolved();
 }
 
@@ -366,7 +389,10 @@ void MPCControl::setRefTraj(vector<traj> & ref_traj)
     {
         ref_traj_[i]=ref_traj[i];
     }
-
+    real_control_vel_offset_.push_back(0.0-ref_traj_[0].vel);
+    real_control_delta_offset_.push_back(0.0-ref_traj_[0].delta);
+    real_control_vel_.push_back(0.0);
+    real_control_delta_.push_back(0.0);
 }
 
 double MPCControl::calculateDistance(traj pos1,traj pos2)
@@ -378,6 +404,7 @@ double MPCControl::calculateDistance(traj pos1,traj pos2)
 void MPCControl::updateNearestRefState(traj& traj_ref_pos,int & traj_ref_index)
 {
     double dis_min=calculateDistance(current_state_,ref_traj_[0]);
+
     //遍历找最小
     for(int i=0;i<ref_traj_.size();i++)
     {
@@ -393,11 +420,11 @@ void MPCControl::updateNearestRefState(traj& traj_ref_pos,int & traj_ref_index)
 
 
 
-// bool  MPCControl::isGoalReached()
-// {
-//     if(calculateDistance(current_state_,ref_traj_.back())<goal_threshold_)
-//         return true;
-//     else
-//         return false;
+bool  MPCControl::isGoalReached()
+{
+    if(calculateDistance(current_state_,ref_traj_.back())<goal_threshold_)
+        return true;
+    else
+        return false;
 
-// }
+}

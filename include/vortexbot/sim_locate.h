@@ -30,11 +30,12 @@ class SimLocate
         //@param 用于保存当前真实轨迹        
         void getRealTraj(vector<traj>& real_traj);
 
-
-    private:
-
         //机器人的真实轨迹
         vector<traj>  real_traj_;
+        
+    private:
+
+
 
         //车身长度
         double car_length_;

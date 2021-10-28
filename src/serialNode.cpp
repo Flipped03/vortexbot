@@ -13,6 +13,9 @@
 #include"vortexbot/traj_generate.h"
 #include"vortexbot/sim_locate.h"
 
+#include <fstream>
+#include <iostream>
+
 using namespace std;
 
 ros::Publisher chatter_pub;
@@ -101,21 +104,84 @@ int main(int argc, char ** argv)
     }
 
     //生成轨迹
-    traj init_pos{0,0.0,7.0,0.0,0.0};
+    traj init_pos{0.0,7.0,0.0,0.0,0};
     TrajGenerate traj_generator(500,0.05);
     vector<traj> traj_ref;
     vector<double> time_ref;
     traj_generator.getTraj(traj_ref,time_ref);
 
     //初始化MPC控制器
-    int Np=10,Nc=10;
+    int Np=15,Nc=10;
     double car_length=2.6;
     double sample_time=0.05;
      MPCControl mpc_controller(sample_time,car_length,Np,Nc);
 
     //初始化模拟定位器
     SimLocate sim_locater(car_length,init_pos);
+    //将轨迹写入mpc_controller
     mpc_controller.setRefTraj(traj_ref);
+
+
+
+    //原始轨迹写入ｔｘｔ
+    ofstream outfile;  
+    outfile.open("/home/li/vortex_ws/src/vortexbot/traj_ref.txt"); 
+    if(outfile.is_open())  
+    {  
+        cout << "111123"<< endl;
+        cout <<traj_ref.size()<< endl;
+        for(int i=0;i<traj_ref.size();i++)
+        {
+            outfile<<traj_ref[i].x<<","<<traj_ref[i].y<<endl;;
+        }
+        outfile.close();   
+    }
+    
+    int max_iteration = 2*1000;
+     while(!mpc_controller.isGoalReached() && (--max_iteration>0))
+     {
+            //用于存放最优控制量
+            double control_vel;
+            double control_delta;
+            //用于存放当前的位置
+            traj current_pos{northing, easting,0,1.0,0};
+            sim_locater.getCurrentPosition(current_pos);
+            //告诉mpc当前机器人位置
+            mpc_controller.updateState(current_pos);
+            //更新MPC矩阵
+            mpc_controller.updateMatrix();
+            //求解ＭＰＣ
+            mpc_controller.qpSlover();
+            //获取ＭＰＣ的控制量
+            mpc_controller.getFirstControl(control_vel,control_delta);
+            // //根据控制量 模拟机器人运动
+            sim_locater.updateRungeKuttaPosition(control_vel,control_delta,sample_time);
+     }
+
+    ofstream outfile1;  
+    outfile1.open("/home/li/vortex_ws/src/vortexbot/real_ref.txt"); 
+    if(outfile1.is_open())  
+    {  
+        cout << "967845"<< endl;
+        cout <<sim_locater.real_traj_.size()<< endl;
+        for(int i=0;i<sim_locater.real_traj_.size();i++)
+        {
+            outfile1<<sim_locater.real_traj_[i].x<<","<<sim_locater.real_traj_[i].y<<endl;;
+        }
+        outfile1.close();   
+    }
+    ofstream control_vel;  
+    control_vel.open("/home/li/vortex_ws/src/vortexbot/control_vel.txt"); 
+    if(control_vel.is_open())  
+    {  
+        cout << "967845"<< endl;
+        cout <<mpc_controller.real_control_vel_.size()<< endl;
+        for(int i=0;i<mpc_controller.real_control_vel_.size();i++)
+        {
+            control_vel<<mpc_controller.real_control_vel_[i]<<","<<mpc_controller.real_control_delta_[i]<<endl;
+        }
+        control_vel.close();   
+    }
     while(ros::ok())
     {
         std_msgs::String msg;
@@ -134,22 +200,9 @@ int main(int argc, char ** argv)
 		cout << yaw_angle.d << endl;
         }
 	cout << "123"<< endl;
-        //用于存放最优控制量
-        double control_vel;
-        double control_delta;
-        //用于存放当前的位置
-        traj current_pos{northing, easting,0,1.0,0};
-        sim_locater.getCurrentPosition(current_pos);
-        //告诉mpc当前机器人位置
-        mpc_controller.updateState(current_pos);
-        //更新MPC矩阵
-        mpc_controller.updateMatrix();
-        //求解ＭＰＣ
-        mpc_controller.qpSlover();
-        //获取ＭＰＣ的控制量
-        mpc_controller.getFirstControl(control_vel,control_delta);
-        // //根据控制量 模拟机器人运动
-        sim_locater.updateRungeKuttaPosition(control_vel,control_delta,sample_time);
+    
+
+
 
         chatter_pub.publish(msg);
 
