@@ -139,6 +139,7 @@ int main(int argc, char ** argv)
         double control_delta;
         //用于存放当前的位置
         traj current_pos{northing, easting,0,1.0,0};
+        sim_locater.getCurrentPosition(current_pos);
         //告诉mpc当前机器人位置
         mpc_controller.updateState(current_pos);
         //更新MPC矩阵
@@ -149,7 +150,7 @@ int main(int argc, char ** argv)
         mpc_controller.getFirstControl(control_vel,control_delta);
         // //根据控制量 模拟机器人运动
         sim_locater.updateRungeKuttaPosition(control_vel,control_delta,sample_time);
-        
+
         chatter_pub.publish(msg);
 
         ros::spinOnce();
