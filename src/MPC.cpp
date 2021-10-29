@@ -70,3 +70,4 @@ int main()
 //https://blog.csdn.net/qq_42258099/article/details/95353986  自动驾驶——模型预测控制（MPC）理解与实践
 //https://github.com/Flipped03/mpc_test/blob/master/traj_tracking/src/main.cpp
 //https://zhuanlan.zhihu.com/p/141871796
+//https://www.coin-or.org/qpOASES/doc/3.2/manual.pdf
