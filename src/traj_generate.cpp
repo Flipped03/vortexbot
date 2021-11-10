@@ -29,6 +29,23 @@ TrajGenerate::TrajGenerate(int n,double sample_time)
             ref_traj_[i].phi=0.2*ref_time_[i];
             ref_traj_[i].vel=5;
             ref_traj_[i].delta=0.103627;
+
+            // ref_time_[i]=i*sample_time;
+            // //ref_traj_[i].time=ref_time_[i];
+            // ref_traj_[i].x=-5.0*ref_time_[i]+10.0*cos(0.1*ref_time_[i]);
+            // //ref_traj_[i].x=5.0*ref_time_[i];
+            // ref_traj_[i].y=5.0;
+            // ref_traj_[i].phi=0;
+            // //ref_traj_[i].vel=cos(0.2*ref_time_[i]);
+            // ref_traj_[i].vel=-5.0-1*sin(0.1*ref_time_[i]);;
+            // ref_traj_[i].delta=0.0;
+
+            // ref_time_[i]=i*sample_time;
+            // ref_traj_[i].x=5.0*ref_time_[i]-10.0*cos(0.1*ref_time_[i]);
+            // ref_traj_[i].y=5.0;
+            // ref_traj_[i].phi=0;
+            // ref_traj_[i].vel=5.0+1*sin(0.1*ref_time_[i]);
+            // ref_traj_[i].delta=0.0;
     }
 }
 

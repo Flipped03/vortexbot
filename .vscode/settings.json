@@ -12,6 +12,11 @@
         "istream": "cpp",
         "ostream": "cpp",
         "sstream": "cpp",
-        "unordered_map": "cpp"
+        "unordered_map": "cpp",
+        "array": "cpp",
+        "deque": "cpp",
+        "list": "cpp",
+        "vector": "cpp",
+        "string_view": "cpp"
     }
 }

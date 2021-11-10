@@ -121,8 +121,6 @@ int main(int argc, char ** argv)
     //将轨迹写入mpc_controller
     mpc_controller.setRefTraj(traj_ref);
 
-
-
     //原始轨迹写入ｔｘｔ
     ofstream outfile;  
     outfile.open("/home/li/vortex_ws/src/vortexbot/traj_ref.txt"); 
@@ -178,7 +176,7 @@ int main(int argc, char ** argv)
         cout <<mpc_controller.real_control_vel_.size()<< endl;
         for(int i=0;i<mpc_controller.real_control_vel_.size();i++)
         {
-            control_vel<<mpc_controller.real_control_vel_[i]<<","<<mpc_controller.real_control_delta_[i]<<endl;
+            control_vel<<mpc_controller.real_control_vel_[i]<<","<<mpc_controller.real_control_delta_[i]<<","<<mpc_controller.real_control_vel_offset_[i]<<","<<mpc_controller.ddduuu[i]<<endl;
         }
         control_vel.close();   
     }

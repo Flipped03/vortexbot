@@ -44,6 +44,11 @@ class MPCControl
         //存放实际控制量
         vector<double> real_control_vel_;
         vector<double> real_control_delta_;
+
+        //存放实际控制量偏差
+        vector<double> real_control_vel_offset_;
+        vector<double> real_control_delta_offset_;
+        vector<double> ddduuu;
     protected:
         //@brief 计算两个点之间的距离
         double calculateDistance(traj pos1,traj pos2); 
@@ -58,9 +63,7 @@ class MPCControl
         //当前位置
         traj  current_state_;
 
-        //存放实际控制量偏差
-        vector<double> real_control_vel_offset_;
-        vector<double> real_control_delta_offset_;
+
         //存放每次二次规划的最优控制量和最优松弛因子
         vector<double> optim_control_;
         double  optim_relax_factor_;
