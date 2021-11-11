@@ -181,7 +181,7 @@ void MPCControl::updateMatrix()
     }
     matrix_du_lb_=-1.0*matrix_du_ub_;
     matrix_du_ub_(basic_control_size_*Nc_,0)=relax_factor_max_;
-    cout<<matrix_du_lb_;
+    //cout<<matrix_du_lb_;
 
     //更新控制量的上下界
     matrix_u_ub_.resize(basic_control_size_*Nc_,1);

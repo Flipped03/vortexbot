@@ -125,7 +125,7 @@ include
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/vortexbot.cpp
 # )
-add_executable(serialNode src/serialNode.cpp src/mpc_control.cpp src/traj_generate.cpp src/trajOnmi_generate.cpp src/sim_locate.cpp)
+add_executable(serialNode src/serialNode.cpp src/mpc_control.cpp  src/mpcOnmi_control.cpp src/traj_generate.cpp src/trajOnmi_generate.cpp src/sim_locate.cpp)
 target_link_libraries(serialNode ${catkin_LIBRARIES})
 target_link_libraries(serialNode
 ${catkin_LIBRARIES}

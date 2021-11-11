@@ -10,7 +10,9 @@
 #include "Eigen/LU"
 
 #include"vortexbot/mpc_control.h"
+#include"vortexbot/mpcOnmi_control.h"
 #include"vortexbot/traj_generate.h"
+#include"vortexbot/trajOnmi_generate.h"
 #include"vortexbot/sim_locate.h"
 
 #include <fstream>
@@ -105,21 +107,28 @@ int main(int argc, char ** argv)
 
     //生成轨迹
     traj init_pos{0.0,7.0,0.0,0.0,0};
+    trajOnmi init_posOnmi{0.0,7.0,0.0,0.0,0};
     TrajGenerate traj_generator(500,0.05);
+    TrajOnmiGenerate trajOnmi_generator(500,0.05);
     vector<traj> traj_ref;
+    vector<trajOnmi> trajOnmi_ref;
     vector<double> time_ref;
     traj_generator.getTraj(traj_ref,time_ref);
+    trajOnmi_generator.getTraj(trajOnmi_ref,time_ref);
 
     //初始化MPC控制器
     int Np=15,Nc=10;
     double car_length=2.6;
     double sample_time=0.05;
-     MPCControl mpc_controller(sample_time,car_length,Np,Nc);
+    MPCControl mpc_controller(sample_time,car_length,Np,Nc);
+    MPCOnmiControl mpcOnmi_controller(sample_time,Np,Nc);
 
     //初始化模拟定位器
     SimLocate sim_locater(car_length,init_pos);
+    SimLocateOnmi sim_locaterOnmi(init_posOnmi);
     //将轨迹写入mpc_controller
     mpc_controller.setRefTraj(traj_ref);
+    mpcOnmi_controller.setRefTraj(trajOnmi_ref);
 
     //原始轨迹写入ｔｘｔ
     ofstream outfile;  
@@ -127,56 +136,91 @@ int main(int argc, char ** argv)
     if(outfile.is_open())  
     {  
         cout << "111123"<< endl;
-        cout <<traj_ref.size()<< endl;
-        for(int i=0;i<traj_ref.size();i++)
+        cout <<trajOnmi_ref.size()<< endl;
+        for(int i=0;i<trajOnmi_ref.size();i++)
         {
-            outfile<<traj_ref[i].x<<","<<traj_ref[i].y<<endl;;
+            outfile<<trajOnmi_ref[i].x<<","<<trajOnmi_ref[i].y<<","<<trajOnmi_ref[i].phi*180/M_PI<<endl;;
         }
         outfile.close();   
     }
     
     int max_iteration = 2*1000;
-     while(!mpc_controller.isGoalReached() && (--max_iteration>0))
+    //  while(!mpc_controller.isGoalReached() && (--max_iteration>0))
+    //  {
+    //         //用于存放最优控制量
+    //         double control_vel;
+    //         double control_delta;
+    //         //用于存放当前的位置
+    //         traj current_pos{northing, easting,0,1.0,0};
+    //         sim_locater.getCurrentPosition(current_pos);
+    //         //告诉mpc当前机器人位置
+    //         mpc_controller.updateState(current_pos);
+    //         //更新MPC矩阵
+    //         mpc_controller.updateMatrix();
+    //         //求解ＭＰＣ
+    //         mpc_controller.qpSlover();
+    //         //获取ＭＰＣ的控制量
+    //         mpc_controller.getFirstControl(control_vel,control_delta);
+    //         // //根据控制量 模拟机器人运动
+    //         sim_locater.updateRungeKuttaPosition(control_vel,control_delta,sample_time);
+    //  }
+    max_iteration = 2*1000;
+    while(!mpcOnmi_controller.isGoalReached() && (--max_iteration>0))
      {
             //用于存放最优控制量
-            double control_vel;
-            double control_delta;
+            double control_vy;
+            double control_vw;
             //用于存放当前的位置
-            traj current_pos{northing, easting,0,1.0,0};
-            sim_locater.getCurrentPosition(current_pos);
+            trajOnmi current_pos{northing, easting,0,1.0,0};
+            sim_locaterOnmi.getCurrentPosition(current_pos);
             //告诉mpc当前机器人位置
-            mpc_controller.updateState(current_pos);
+            mpcOnmi_controller.updateState(current_pos);
             //更新MPC矩阵
-            mpc_controller.updateMatrix();
+            mpcOnmi_controller.updateMatrix();
             //求解ＭＰＣ
-            mpc_controller.qpSlover();
+            mpcOnmi_controller.qpSlover();
             //获取ＭＰＣ的控制量
-            mpc_controller.getFirstControl(control_vel,control_delta);
+            mpcOnmi_controller.getFirstControl(control_vy,control_vw);
             // //根据控制量 模拟机器人运动
-            sim_locater.updateRungeKuttaPosition(control_vel,control_delta,sample_time);
+            sim_locaterOnmi.updateRungeKuttaPosition(3.0,control_vy,control_vw,sample_time);
      }
+
+    // ofstream outfile1;  
+    // outfile1.open("/home/li/vortex_ws/src/vortexbot/real_ref.txt"); 
+    // if(outfile1.is_open())  
+    // {  
+    //     cout << "967845"<< endl;
+    //     cout <<sim_locater.real_traj_.size()<< endl;
+    //     for(int i=0;i<sim_locater.real_traj_.size();i++)
+    //     {
+    //         outfile1<<sim_locater.real_traj_[i].x<<","<<sim_locater.real_traj_[i].y<<endl;;
+    //     }
+    //     outfile1.close();   
+    // }
 
     ofstream outfile1;  
     outfile1.open("/home/li/vortex_ws/src/vortexbot/real_ref.txt"); 
     if(outfile1.is_open())  
     {  
         cout << "967845"<< endl;
-        cout <<sim_locater.real_traj_.size()<< endl;
-        for(int i=0;i<sim_locater.real_traj_.size();i++)
+        cout <<sim_locaterOnmi.real_traj_.size()<< endl;
+        for(int i=0;i<sim_locaterOnmi.real_traj_.size();i++)
         {
-            outfile1<<sim_locater.real_traj_[i].x<<","<<sim_locater.real_traj_[i].y<<endl;;
+            outfile1<<sim_locaterOnmi.real_traj_[i].x<<","<<sim_locaterOnmi.real_traj_[i].y<<","<<sim_locaterOnmi.real_traj_[i].phi*180/M_PI<<endl;;
         }
         outfile1.close();   
     }
+
     ofstream control_vel;  
     control_vel.open("/home/li/vortex_ws/src/vortexbot/control_vel.txt"); 
     if(control_vel.is_open())  
     {  
         cout << "967845"<< endl;
-        cout <<mpc_controller.real_control_vel_.size()<< endl;
-        for(int i=0;i<mpc_controller.real_control_vel_.size();i++)
+        cout <<mpcOnmi_controller.real_control_vy_.size()<< endl;
+        for(int i=0;i<mpcOnmi_controller.real_control_vy_.size();i++)
         {
-            control_vel<<mpc_controller.real_control_vel_[i]<<","<<mpc_controller.real_control_delta_[i]<<","<<mpc_controller.real_control_vel_offset_[i]<<","<<mpc_controller.ddduuu[i]<<endl;
+            control_vel<<"vy:"<<mpcOnmi_controller.real_control_vy_[i]<<",vw:"<<mpcOnmi_controller.real_control_vw_[i]<<",vy_off:"<<mpcOnmi_controller.real_control_vy_offset_[i]<<",vw_off:"<<mpcOnmi_controller.real_control_vw_offset_[i];
+            control_vel<<",pf:"<<mpcOnmi_controller.pf[i]*180/M_PI<<",preal:"<<mpcOnmi_controller.preal[i]*180/M_PI<<",dy:"<<mpcOnmi_controller.dy[i]<<",dy2:"<<mpcOnmi_controller.dy2[i]<<endl;
         }
         control_vel.close();   
     }

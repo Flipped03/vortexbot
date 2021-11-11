@@ -67,8 +67,8 @@ void SimLocateOnmi::updateEulerPosition(double vx,double vy,double vw,double sam
     // real_traj_.push_back(next_pos);
 
     trajOnmi  next_pos;
-    next_pos.x=real_traj_.back().x + vx*cos(real_traj_.back().phi)*sample_time + vy*sin(real_traj_.back().phi)*sample_time;
-    next_pos.y=real_traj_.back().y + vx*sin(real_traj_.back().phi)*sample_time - vy*cos(real_traj_.back().phi)*sample_time;
+    next_pos.x=real_traj_.back().x  +  vx*cos(real_traj_.back().phi)*sample_time + vy*sin(real_traj_.back().phi)*sample_time;
+    next_pos.y=real_traj_.back().y  +  vx*sin(real_traj_.back().phi)*sample_time - vy*cos(real_traj_.back().phi)*sample_time;
     next_pos.phi=real_traj_.back().phi + vw*sample_time;
     next_pos.vx=vx;
     next_pos.vy=vy;
@@ -83,6 +83,8 @@ void SimLocateOnmi::updateRungeKuttaPosition(double vx,double vy,double vw,doubl
     next_pos.x=real_traj_.back().x + vx*cos(real_traj_.back().phi + vw*sample_time)*sample_time + vy*sin(real_traj_.back().phi + vw*sample_time)*sample_time;
     next_pos.y=real_traj_.back().y + vx*sin(real_traj_.back().phi + vw*sample_time)*sample_time - vy*cos(real_traj_.back().phi + vw*sample_time)*sample_time;
     next_pos.phi=real_traj_.back().phi + vw*sample_time;
+    if(next_pos.phi>=2*M_PI)  next_pos.phi=next_pos.phi-2*M_PI;
+    if(next_pos.phi<0)  next_pos.phi=next_pos.phi+2*M_PI;
     next_pos.vx=vx;
     next_pos.vy=vy;
     next_pos.vw=vw;

@@ -27,9 +27,19 @@ TrajOnmiGenerate::TrajOnmiGenerate(int n,double sample_time)
             ref_traj_[i].x=25*sin(0.2*ref_time_[i]);
             ref_traj_[i].y=25+10-25*cos(0.2*ref_time_[i]);
             ref_traj_[i].phi=0.2*ref_time_[i];
-            ref_traj_[i].vx=5;
+            ref_traj_[i].vx=3;
             ref_traj_[i].vy=0;
-             ref_traj_[i].vw=0;
+             ref_traj_[i].vw=0.103627;
+
+            // ref_time_[i]=i*sample_time;
+            // ref_traj_[i].x=5.0*ref_time_[i]-10.0*(0.1*ref_time_[i]);
+            // ref_traj_[i].y=5.0;
+            // ref_traj_[i].phi=0;
+            // ref_traj_[i].vx=3;
+            // ref_traj_[i].vy=0;
+            // ref_traj_[i].vw=0;
+            if(ref_traj_[i].phi>=2*M_PI)  ref_traj_[i].phi=ref_traj_[i].phi-2*M_PI;
+            if(ref_traj_[i].phi<0)  ref_traj_[i].phi=ref_traj_[i].phi+2*M_PI;
     }
 }
 
